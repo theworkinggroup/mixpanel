@@ -11,9 +11,9 @@ class MixpanelMiddleware
 
     @status, @headers, @response = @app.call(env)
 
-    update_response!
+    events_rendered = update_response!
     update_content_length!
-    delete_event_queue!
+    delete_event_queue! if events_rendered
 
     [@status, @headers, @response]
   end
@@ -21,15 +21,21 @@ class MixpanelMiddleware
   private
 
   def update_response!
+    events_rendered = false
     @response.each do |part|
       if is_regular_request? && is_html_response?
         part.gsub!("</head>", "#{render_event_tracking_scripts}</head>")
+        events_rendered = true
       elsif is_ajax_request? && is_html_response?
         part.gsub!(part, render_event_tracking_scripts + part)
+        events_rendered = true
       elsif is_ajax_request? && is_javascript_response?
         part.gsub!(part, render_event_tracking_scripts(false) + part)
+        events_rendered = true
       end
     end
+
+    events_rendered
   end
 
   def update_content_length!
