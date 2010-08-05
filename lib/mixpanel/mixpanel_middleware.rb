@@ -7,8 +7,7 @@ class MixpanelMiddleware
   end
 
   def call(env)
-    @env = env
-
+    @env = env['rack.session']
     @status, @headers, @response = @app.call(env)
 
     events_rendered = update_response!

@@ -6,7 +6,7 @@ class Mixpanel
   def initialize(token, env)
     @token = token
     @env = env
-    clear_queue
+    @env["mixpanel_events"] ||= []
   end
 
   def append_event(event, properties = {})
@@ -24,10 +24,6 @@ class Mixpanel
 
   def queue
     @env["mixpanel_events"]
-  end
-
-  def clear_queue
-    @env["mixpanel_events"] = []
   end
 
   private
