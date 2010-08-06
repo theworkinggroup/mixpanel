@@ -22,7 +22,7 @@ class MixpanelMiddleware
   def update_response!
     events_rendered = false
     @response.each do |part|
-      if is_regular_request? && is_html_response?
+      if is_regular_request? && is_html_response? && response_success?
         part.gsub!("</head>", "#{render_event_tracking_scripts}</head>")
         events_rendered = true
       end
@@ -35,6 +35,10 @@ class MixpanelMiddleware
     new_size = 0
     @response.each{|part| new_size += part.bytesize}
     @headers.merge!("Content-Length" => new_size.to_s)
+  end
+
+  def response_success?
+    (200..299).member? @response.status
   end
 
   def is_regular_request?
@@ -54,6 +58,11 @@ class MixpanelMiddleware
   end
 
   def delete_event_queue!
+    if Rails && Rails.logger
+      Rails.logger.debug '-- Mixpanel ' + '-' * 70
+      Rails.logger.debug "Deleting event queue from #{@response.request.fullpath}"
+      Rails.logger.debug '------------' + '-' * 70
+    end
     @env.delete('mixpanel_events')
   end
 
@@ -63,6 +72,13 @@ class MixpanelMiddleware
   end
 
   def render_event_tracking_scripts(include_script_tag=true)
+    if Rails && Rails.logger
+      Rails.logger.debug '-- Mixpanel ' + '-' * 70
+      Rails.logger.debug "Rendering event tracking scripts to #{@response.request.fullpath}"
+      Rails.logger.debug queue.to_yaml
+      Rails.logger.debug '------------' + '-' * 70
+    end
+
     return "" if queue.empty?
 
     output = queue.map {|event| %(Mixpanel.track("#{event[:event]}", #{event[:properties].to_json});) }.join("\n")
