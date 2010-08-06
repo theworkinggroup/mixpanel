@@ -25,12 +25,6 @@ class MixpanelMiddleware
       if is_regular_request? && is_html_response?
         part.gsub!("</head>", "#{render_event_tracking_scripts}</head>")
         events_rendered = true
-      elsif is_ajax_request? && is_html_response?
-        part.gsub!(part, render_event_tracking_scripts + part)
-        events_rendered = true
-      elsif is_ajax_request? && is_javascript_response?
-        part.gsub!(part, render_event_tracking_scripts(false) + part)
-        events_rendered = true
       end
     end
 
